@@ -1,0 +1,146 @@
+clc;
+clear all;
+close all;
+
+tic
+%% Inisialisasi masalah
+
+nVar = 8;                           % dimensi
+
+VarSize = [1 nVar];                 % dimensi matriks
+for i = 1:nVar
+    if i == 1
+        VarMin(i) = 50;                       
+        VarMax(i) = 10000;   
+    elseif i>1 && i<4
+        VarMin(i) = 1000;
+        VarMax(i) = 10000;
+    else
+        VarMin(i) = 10;
+        VarMax(i) = 1000;
+    end
+end
+
+particle1 = zeros(1,nVar);
+
+%% Inisialisasi parameter PSO  
+
+wmax = 0.9;
+wmin = 0.4;
+it = 1;
+MaxIt = 10000;                       % Jumlah iterasi
+nPop = 30;                          % Jumlah agen populasi                              
+w = wmax*((wmax-wmin)/MaxIt)*it;    % Momen inersia
+c1 = 2;                             % Koefisien Personal
+c2 = 2;                             % Koefisien Sosial 
+konvergen = 0;
+%% Inisialisasi Populasi
+
+empty_particle.Position = [];
+empty_particle.Velocity = [];
+empty_particle.Cost = [];
+empty_particle.Best.Position = [];
+empty_particle.Best.Cost = [];
+
+% Array Populasi npop x 1
+particle = repmat(empty_particle, nPop, 1);
+
+% Inisialisasi solusi global
+GlobalBest.Cost = inf;
+
+% Inisialisasi posisi populasi
+for i=1:nPop
+    for j=1:nVar
+        particle1(i,j) = (VarMax(j)-VarMin(j))*rand + VarMin(j);
+    end
+    particle(i).Position = particle1(i,:);
+    
+    % Inisialisasi kecepatan
+    particle(i).Velocity = zeros(VarSize);
+    
+    % fitness
+    particle(i).Cost = hitungfungsisoal1(particle(i).Position);
+    
+    % Update optimum lokal
+    particle(i).Best.Position = particle(i).Position;
+    particle(i).Best.Cost = particle(i).Cost;
+    
+    % Update optimum global
+    if particle(i).Best.Cost < GlobalBest.Cost
+        GlobalBest = particle(i).Best;
+    end
+end
+globaldulu = GlobalBest.Cost;
+
+% Array fitness terbaik tiap iterasi
+BestCosts = zeros(MaxIt, 1);
+
+%% Main program PSO
+
+for it = 1 : MaxIt
+    for i = 1 : nPop
+        
+        % Update kecepatan
+        particle(i).Velocity = w*particle(i).Velocity ...
+            + c1*rand(VarSize).*(particle(i).Best.Position-particle(i).Position)...
+            + c2*rand(VarSize).*(GlobalBest.Position - particle(i).Position);
+                
+        % Update Posisi
+        particle(i).Position = particle(i).Position+particle(i).Velocity;
+        
+        particle1(i,:) = particle(i).Position;
+        % Penerapan batasan
+        for j=1:nVar
+            particle1(i,j) = max(particle1(i,j), VarMin(j));
+            particle1(i,j) = min(particle1(i,j), VarMax(j));
+        end
+        particle(i).Position = particle1(i,:);
+        
+        % fitness
+        particle(i).Cost = hitungfungsisoal1(particle(i).Position);
+        
+        % Update optimum lokal
+        if particle(i).Cost < particle(i).Best.Cost
+            particle(i).Best.Position = particle(i).Position;
+            particle(i).Best.Cost = particle(i).Cost;
+            
+            % Update optimum global 
+            if particle(i).Best.Cost < GlobalBest.Cost
+                GlobalBest = particle(i).Best;
+            end
+            
+        end
+    end
+    % Update konvergen
+    if globaldulu == GlobalBest.Cost
+        konvergen = konvergen + 1;
+    elseif globaldulu ~= GlobalBest.Cost
+        konvergen = 1;
+    end
+    globaldulu = GlobalBest.Cost;
+    if konvergen == 50
+        % fitness terbaik
+        BestCosts = GlobalBest.Cost;
+        BestPosition = GlobalBest.Position;
+        break;
+    end
+    
+    % Display Iteration Information
+%     disp(['Iteration ' num2str(it) ': Best Cost = ' num2str(BestCosts(it))]);
+    
+    % update momen inersia
+    w = wmax*((wmax-wmin)/MaxIt)*it;
+end
+    % cetak iterasi
+%     disp(['Iteration ' num2str(MaxIt) ': Best Cost = ' num2str(BestCosts(MaxIt))]);
+
+
+%% Hasil
+fprintf('Konvergen = %d\n',konvergen);
+fprintf('\nPosisi 1  Posisi 2  Posisi 3  Posisi 4  Posisi 5  Posisi 6  Posisi 7  Posisi 8  Solusi  Pinalti  Waktu Iterasi');
+fprintf('\n%6.4f %5.4f %5.4f %5.4f %5.4f %5.4f %5.4f %5.4f %5.4f ',BestPosition,BestCosts);
+
+% hitungfungsisoal1uji(BestPosition)
+over = toc;
+fprintf(' %5.4f',over);
+fprintf(' %d\n',it);
