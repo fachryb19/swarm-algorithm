@@ -1,0 +1,113 @@
+clc;
+clear all;
+close all;
+
+tic
+%% Inisialisasi masalah
+
+nVar = 8;
+
+for i = 1:nVar
+    if i == 1
+        VarMin(i) = 100;                       
+        VarMax(i) = 10000;   
+    elseif i>1 && i<4
+        VarMin(i) = 1000;
+        VarMax(i) = 10000;
+    else
+        VarMin(i) = 10;
+        VarMax(i) = 1000;
+    end
+end
+
+%% Inisialisasi Parameter EGWO
+
+it = 1;                         % iterasi
+Max_iter = 500;
+SearchAgents = 30;
+konvergen = 0;
+
+%% Inisialisasi Serigala
+
+% inisialisasi alpha, beta, dan delta
+Alpha_pos = zeros(1,nVar);
+Alpha_score = inf;              
+
+globaldulu = Alpha_score;
+fprintf('global dulu = %4.4f\n\n',Alpha_score);
+% Inisialisasi posisi serigala
+Positions = initialization(SearchAgents,nVar,VarMax,VarMin)
+
+
+%% Main program EGWO
+
+while it < 2
+    for i = 1:SearchAgents
+      
+        % Membatasi serigala sesuai batasan
+        for j = 1:nVar
+            Positions(i,j) = max(Positions(i,j), VarMin(j));
+            Positions(i,j) = min(Positions(i,j), VarMax(j));
+        end
+        Positions
+        
+        % Mencari nilai fitness
+        fitness = hitungfungsisoal1(Positions(i,:));
+        fprintf('fitness serigala %d = %4.4f\n',i,fitness);
+        
+        % Update nilai Alpha, Beta, dan Delta
+        if fitness < Alpha_score 
+            Alpha_score = fitness;              % Update alpha
+            Alpha_pos = Positions(i,:);
+            allfa = i;
+        end
+    end
+    fprintf('Alpha serigala ke %d dengan nilai fitness %4.4f\n\n',allfa,Alpha_score);
+    
+    a1 = rand()                                % a random dari 0 to 1
+    for i = 1:nVar
+        a(i) = a1;
+    end
+    % Update posisi
+    for i = 1:SearchAgents
+        r1 = rand(1,nVar);                      % r1 random dari [0,1]
+        r2 = rand(1,nVar);                      % r2 random dari [0,1]
+        fprintf('r1 = %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f\nr2 = %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f\n',r1,r2);
+        A1 = 2*a.*r1-a;                           
+        C1 = 2*r2;                              
+        fprintf('A1 = %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f\nC1 = %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f\n',A1,C1);
+        D_alpha = abs(C1 .* Alpha_pos - Positions(i,:));
+        X1 = Alpha_pos - A1 .* D_alpha;         
+        fprintf('D_alpha = %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f\nX1 = %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f\n',D_alpha,X1);              
+        Positions(i,:) = X1;                    
+
+    end
+    fprintf('\n\n');
+    globalsekarang = Alpha_score;
+    fprintf('global sekarang = %4.4f',globalsekarang);
+    % Update konvergen
+    if globaldulu == globalsekarang
+        konvergen = konvergen + 1;
+    elseif globaldulu ~= globalsekarang
+        konvergen = 1;
+    end
+    globaldulu = globalsekarang;
+    if konvergen == 50
+        % fitness terbaik
+        BestCost = Alpha_score;
+        BestPosition = Alpha_pos;
+        break;
+    end
+    it = it + 1;
+end
+    
+    
+%% Hasil
+fprintf('Konvergen = %d\n',konvergen);
+fprintf('\nPosisi 1  Posisi 2  Posisi 3  Posisi 4  Posisi 5  Posisi 6  Posisi 7  Posisi 8  Solusi  Pinalti Waktu Iterasi');
+fprintf('\n%6.4f %5.4f %5.4f %5.4f %5.4f %5.4f %5.4f %5.4f %5.4f ',BestPosition,BestCost);
+
+hitungfungsisoal1uji(BestPosition)
+over = toc;
+fprintf(' %5.4f',over);
+fprintf(' %d\n',it);
