@@ -1,0 +1,142 @@
+clc;
+clear all;
+close all;
+
+tic
+%% Inisialisasi masalah
+
+nVar = 8;
+
+for i = 1:nVar
+    if i == 1
+        VarMin(i) = 100;                       
+        VarMax(i) = 10000;   
+    elseif i>1 && i<4
+        VarMin(i) = 1000;
+        VarMax(i) = 10000;
+    else
+        VarMin(i) = 10;
+        VarMax(i) = 1000;
+    end
+end
+
+%% Inisialisasi parameter GWO
+
+it = 1;                         % iterasi
+Max_iter = 500;
+SearchAgents = 30;
+konvergen = 0;
+
+%% Inisialisasi serigala
+
+% inisialisasi alpha, beta, dan delta
+Alpha_pos = zeros(1,nVar);
+Alpha_score = inf;          
+
+Beta_pos = zeros(1,nVar);
+Beta_score = inf;             
+
+Delta_pos = zeros(1,nVar);
+Delta_score = inf;            
+
+globaldulu = Alpha_score;
+% Inisalisasi posisi serigala
+Positions = initialization(SearchAgents,nVar,VarMax,VarMin);
+
+
+%% Main program GWO
+
+while it < MaxIter
+    for i = 1:SearchAgents
+      
+        % Membatasi ruang serigala
+        for j = 1:nVar
+            Positions(i,j) = max(Positions(i,j), VarMin(j));
+            Positions(i,j) = min(Positions(i,j), VarMax(j));
+        end
+        Positions
+        % Hitung nilai fitness
+        fitness = hitungfungsisoal1(Positions(i,:));
+        fprintf('fitness serigala %d = %4.4f',i,fitness);
+        
+        % Update Alpha, Beta, dan Delta
+        if fitness < Alpha_score 
+            Alpha_score = fitness;              % Update alpha
+            Alpha_pos = Positions(i,:);
+        end
+        
+        if fitness > Alpha_score && fitness < Beta_score 
+            Beta_score = fitness;               % Update beta
+            Beta_pos = Positions(i,:);
+        end
+        
+        if fitness > Alpha_score && fitness > Beta_score && fitness < Delta_score 
+            Delta_score = fitness;              % Update delta
+            Delta_pos = Positions(i,:);
+        end
+    end
+    
+    a1 = 2-it*((2)/Max_iter);                     % a menurun secara linear dari 2 sampai 0
+    for i = 1:nVar
+        a(i) = a1;
+    end
+    
+    % Update posisi serigala
+    for i = 1:SearchAgents
+        r1 = rand(1,nVar);                         % r1 random rentang [0,1]
+        r2 = rand(1,nVar);                         % r2 random rentang [0,1]
+        
+        A1 = 2*a.*r1-a;                          
+        C1 = 2*r2;                              
+        
+        D_alpha = abs(C1 .* Alpha_pos - Positions(i,:)); 
+        X1 = Alpha_pos - A1 .* D_alpha;          
+        
+        r1 = rand(1,nVar);                         % r1 random rentang [0,1]
+        r2 = rand(1,nVar);                         % r2 random rentang [0,1]
+        
+        A2 = 2*a.*r1-a;                          
+        C2 = 2*r2;                              
+        
+        D_beta = abs(C2 .* Beta_pos - Positions(i,:)); 
+        X2 = Beta_pos - A2 .* D_beta;         
+        
+        r1 = rand(1,nVar);                         % r1 random rentang [0,1]
+        r2 = rand(1,nVar);                         % r2 random rentang [0,1]
+        
+        A3 = 2*a.*r1-a;                         
+        C3 = 2*r2;                              
+        
+        D_delta = abs(C3 .* Delta_pos - Positions(i,:)); 
+        X3 = Delta_pos - A3 .* D_delta;         
+            
+        Positions(i,:)=(X1 + X2 + X3)/3;        
+                          
+    end
+    globalsekarang = Alpha_score;
+    % Update konvergen
+    if globaldulu == globalsekarang
+        konvergen = konvergen + 1;
+    elseif globaldulu ~= globalsekarang
+        konvergen = 1;
+    end
+    globaldulu = globalsekarang;
+    if konvergen == 50
+        % fitness terbaik
+        BestCost = Alpha_score;
+        BestPosition = Alpha_pos;
+        break;
+    end
+    it = it + 1;
+end
+    
+    
+%% Hasil
+fprintf('Konvergen = %d\n',konvergen);
+fprintf('\nPosisi 1  Posisi 2  Posisi 3  Posisi 4  Posisi 5  Posisi 6  Posisi 7  Posisi 8  Solusi  Pinalti Waktu Iterasi');
+fprintf('\n%6.4f %5.4f %5.4f %5.4f %5.4f %5.4f %5.4f %5.4f %5.4f ',BestPosition,BestCost);
+
+hitungfungsisoal1uji(BestPosition)
+over = toc;
+fprintf(' %5.4f',over);
+fprintf(' %d\n',it);
