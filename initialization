@@ -1,0 +1,8 @@
+function Position=initialization(SearchAgents,nVar,VarMax,VarMin)
+
+    for i=1:nVar
+        VarMaxi = VarMax(i);
+        VarMini = VarMin(i);
+        Position(:,i) = (VarMaxi-VarMini)*rand(SearchAgents,1)+VarMini;
+    end
+end
